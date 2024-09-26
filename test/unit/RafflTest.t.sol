@@ -31,10 +31,24 @@ contract RaffleTest is Test {
         gasLane = config.gasLane;
         subscriptionId = config.subscriptionId;
         callbackGasLimit = config.callbackGasLimit;
+        vm.deal(PLAYER, STARTING_PLAYER_BALANCE);
     }
 
     function testRaffleInitializesInOpenState() public view {
         assert(raffle.getRaffleState() == Raffle.RaffleState.OPEN);
+    }
+
+    function testRaffleRevertWhenYouDoNotPayEnough() public {
+        vm.prank(PLAYER);
+        vm.expectRevert(Raffle.Raffle__SendMoreToEnterRaffle.selector);
+        raffle.enterRaffle();
+    }
+
+    function testRaffleAddsPlayerWhenTheyEnter() public {
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+        address playerEntered = raffle.getPlayer(0);
+        assert(playerEntered == PLAYER);
     }
 
 }
