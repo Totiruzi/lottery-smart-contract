@@ -30,7 +30,7 @@ contract CreateSubscription is Script {
     }
 }
 
-contract FundSubscription {
+contract FundSubscription is Script {
     HelperConfig helperConfig;
     uint256 public constant FUND_AMOUNT = 3 ether; // 3 LINK 
     function fundScubscriptionUsingConfig() public {
