@@ -8,6 +8,7 @@ import {DeployRaffle} from "script/DeployRaffle.s.sol";
 import {HelperConfig} from "script/HelperConfig.s.sol";
 
 contract RaffleTest is Test {
+
     Raffle public raffle;
     HelperConfig public helperConfig;
 
@@ -20,6 +21,12 @@ contract RaffleTest is Test {
 
     address public PLAYER = makeAddr("player");
     uint256 private constant STARTING_PLAYER_BALANCE = 10 ether;
+
+    /**
+     * Events
+     */
+    event RaffleEntered(address indexed player);
+    event WinnerPicked(address indexed winner);
 
     function setUp() external {
         DeployRaffle deployer = new DeployRaffle();
@@ -38,6 +45,9 @@ contract RaffleTest is Test {
         assert(raffle.getRaffleState() == Raffle.RaffleState.OPEN);
     }
 
+    /**
+     * ENTER RAFFLE
+     */
     function testRaffleRevertWhenYouDoNotPayEnough() public {
         vm.prank(PLAYER);
         vm.expectRevert(Raffle.Raffle__SendMoreToEnterRaffle.selector);
@@ -45,10 +55,40 @@ contract RaffleTest is Test {
     }
 
     function testRaffleAddsPlayerWhenTheyEnter() public {
+        // Arrange
         vm.prank(PLAYER);
+
+        // Act
         raffle.enterRaffle{value: entranceFee}();
+
+        // Assert
         address playerEntered = raffle.getPlayer(0);
         assert(playerEntered == PLAYER);
     }
 
+    function testEnteringRaffleEmitsEvent() public {
+        // Arrange
+        vm.prank(PLAYER);
+
+        // Act
+        vm.expectEmit(true, false, false, false, address(raffle));
+        emit RaffleEntered(PLAYER);
+
+        // Assert
+        raffle.enterRaffle{value: entranceFee}();
+    }
+
+    function testDontAllowPlayerToEnterRaffleWhileRaffleIsCalculating() public {
+        // Arrange
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+        raffle.performUpkeep("");
+
+        // Act /  Assert
+        vm.expectRevert(Raffle.Raffle__RaffleIsNotOpen.selector);
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+    }
 }
