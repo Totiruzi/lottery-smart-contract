@@ -40,7 +40,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
     error Raffle__SendMoreToEnterRaffle();
     error Raffle__TransferFailed();
     error Raffle__RaffleIsNotOpen();
-    error Raffle_UpkeepNotNeeded(uint256 balance, uint256 playerLent, uint256 raffleState);
+    error Raffle__UpkeepNotNeeded(uint256 balance, uint256 playerLent, uint256 raffleState);
 
     /**
      * Types Declarations
@@ -72,6 +72,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
      */
     event RaffleEntered(address indexed player);
     event WinnerPicked(address indexed winner);
+    event RequestedRaffleWinner(uint256 indexed requestedId);
 
     constructor(
         uint256 entranceFee,
@@ -156,7 +157,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
     {
         (bool upkeepNeeded,) = checkUpkeep("");
         if (!upkeepNeeded) {
-            revert Raffle_UpkeepNotNeeded(address(this).balance, s_players.length, uint256(s_raffleState));
+            revert Raffle__UpkeepNotNeeded(address(this).balance, s_players.length, uint256(s_raffleState));
         }
 
         // Get our random from VRF number
@@ -173,7 +174,8 @@ contract Raffle is VRFConsumerBaseV2Plus {
             )
         });
 
-        s_vrfCoordinator.requestRandomWords(request);
+        uint256 requestId =  s_vrfCoordinator.requestRandomWords(request);
+        emit RequestedRaffleWinner(requestId);
     }
 
     function fulfillRandomWords(uint256 /** requestId */, uint256[] calldata randomWords) internal override {
