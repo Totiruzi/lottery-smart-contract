@@ -49,7 +49,9 @@ contract RaffleTest is CodeConstant, Test {
     modifier playerEnteredRaffle() {
         vm.prank(PLAYER);
         raffle.enterRaffle{value: entranceFee}();
-        vm.warp(block.timestamp + interval + 1);
+        // manipulate the block timestamp to a desired value, 
+        // stmulating time progress
+        vm.warp(block.timestamp + interval + 1); 
         vm.roll(block.number + 1);
         _;
     }
